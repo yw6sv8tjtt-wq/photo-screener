@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>照片素材智能筛选系统</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --line:#e4e7ec; --text:#1f2329; --muted:#6b7280;
+    --brand:#2f6bff; --brand-soft:#eaf0ff; --green:#16a34a; --green-soft:#e7f6ec;
+    --red:#dc2626; --red-soft:#fdeaea; --amber:#d97706; --amber-soft:#fef3e2;
+    --shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+  header{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:12px;padding:10px 18px}
+  header .logo{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#2f6bff,#7aa2ff);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+  header h1{font-size:15px;margin:0;font-weight:650}
+  header .spacer{flex:1}
+  header .proj-tag{background:var(--brand-soft);color:var(--brand);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  header button{border:1px solid var(--line);background:#fff;color:var(--text);padding:7px 12px;border-radius:8px;
+    cursor:pointer;font-size:13px}
+  header button:hover{background:#f0f2f5}
+  header button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  header button.primary:hover{filter:brightness(.96)}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:18px}
+  .hidden{display:none!important}
+  h2{font-size:16px;margin:0 0 12px}
+  h3{font-size:14px;margin:0 0 8px;color:var(--muted);font-weight:600}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  label.fld{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+  input[type=text],input[type=number],select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;
+    font-size:14px;background:#fff;color:var(--text)}
+  input:focus,select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:9px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:550}
+  .btn:hover{background:#f0f2f5}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.primary:hover{filter:brightness(.96)}
+  .btn.ghost{background:transparent}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:34px;text-align:center;color:var(--muted);
+    background:#fafbfc;cursor:pointer;transition:.15s}
+  .drop.hover{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+  .drop b{color:var(--text)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .tile{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .tile img{width:100%;height:120px;object-fit:cover;display:block;background:#eee}
+  .tile .meta{padding:6px 8px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tile .badge{position:absolute;top:6px;left:6px;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;color:#fff}
+  .badge.best{background:var(--green)} .badge.waste{background:var(--red)} .badge.group{background:#6b7280}
+  .tile .chk{position:absolute;top:6px;right:6px}
+  .tile .chk input{width:18px;height:18px;cursor:pointer}
+  .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+  .tab{padding:9px 14px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);font-weight:550;font-size:13px}
+  .tab.active{color:var(--brand);border-color:var(--brand)}
+  .tab .cnt{background:#eef0f3;color:#475; border-radius:10px;padding:1px 7px;font-size:11px;margin-left:5px}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:#f0f2f5;color:var(--muted);margin:2px 4px 2px 0}
+  .pill.g{background:var(--green-soft);color:var(--green)}
+  .pill.r{background:var(--red-soft);color:var(--red)}
+  .pill.a{background:var(--amber-soft);color:var(--amber)}
+  .stat{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .stat .box{flex:1;min-width:120px;background:#fafbfc;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .stat .n{font-size:22px;font-weight:700}
+  .stat .l{font-size:12px;color:var(--muted)}
+  .progress{height:8px;background:#eef0f3;border-radius:6px;overflow:hidden;margin:10px 0}
+  .progress > i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}
+  .note{font-size:12px;color:var(--muted);background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:10px}
+  .kv{font-size:12px;color:var(--muted)}
+  .kv b{color:var(--text)}
+  .settings-line{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+  .settings-line label{width:130px;font-size:13px;color:var(--muted)}
+  .settings-line input,.settings-line select{width:auto;min-width:120px}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1f2329;color:#fff;padding:10px 18px;
+    border-radius:10px;font-size:13px;z-index:60;opacity:0;transition:.25s;pointer-events:none}
+  .toast.show{opacity:1}
+  .preview-name{font-size:12px;color:var(--brand);font-family:ui-monospace,monospace;margin-top:4px}
+  .empty{color:var(--muted);text-align:center;padding:30px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:none;background:#fff;padding:7px 12px;cursor:pointer;font-size:13px;color:var(--muted)}
+  .seg button.on{background:var(--brand);color:#fff}
+  .small{font-size:12px;color:var(--muted)}
+  hr{border:none;border-top:1px solid var(--line);margin:14px 0}
+</style>
+<!-- Tauri 桥接:桌面模式下用原生文件 API 替代浏览器 File System Access API -->
+<script type="module">
+import { open } from '@tauri-apps/plugin-dialog';
+import { writeFile, mkdir } from '@tauri-apps/plugin-fs';
+window.__TAURI_BRIDGE = { dialog: { open: (opts) => open(opts) }, fs: { writeFile, mkdir } };
+window.__TAURI_ACTIVE = true;
+</script>
+</head>
+<body>
+<header>
+  <div class="logo">P</div>
+  <h1>照片素材智能筛选系统</h1>
+  <span class="proj-tag hidden" id="projTag"></span>
+  <div class="spacer"></div>
+  <button class="ghost" id="btnHelp">使用说明</button>
+  <button class="ghost" id="btnSettings">设置</button>
+  <button class="primary" id="btnExportTop" disabled>导出结果</button>
+</header>
+
+<div class="wrap">
+
+  <!-- 1. 新建项目 -->
+  <section id="viewProject" class="card">
+    <h2>① 新建项目</h2>
+    <div class="row">
+      <div style="flex:1;min-width:260px">
+        <label class="fld">产品名称(项目名)</label>
+        <input type="text" id="inpProjectName" placeholder="例如：夏季新品T恤 / 某客户宣传图">
+      </div>
+      <div style="flex:1;min-width:260px">
+        <label class="fld">照片存储位置</label>
+        <div class="row" style="gap:8px">
+          <input type="text" id="inpStorage" placeholder="未选择(将用 ZIP 导出)" readonly>
+          <button class="btn" id="btnPickStorage">选择文件夹</button>
+        </div>
+        <div class="small" style="margin-top:6px">选中的文件夹用于直接写入分类结果(需 Chrome/Edge 且允许权限);不选则导出为 ZIP 压缩包。</div>
+      </div>
+    </div>
+    <hr>
+    <div class="settings-line">
+      <label>精品图命名模板</label>
+      <input type="text" id="inpTemplate" value="{product}_best_{idx}" style="flex:1;min-width:240px">
+      <span class="small">可用: <code>{product}</code> 产品名 · <code>{group}</code> 组号 · <code>{idx}</code> 组内序号 · <code>{orig}</code> 原名</span>
+    </div>
+    <div class="preview-name" id="tplPreview"></div>
+    <div style="margin-top:14px">
+      <button class="btn primary" id="btnStart" disabled>进入并上传照片</button>
+    </div>
+  </section>
+
+  <!-- 2. 上传 -->
+  <section id="viewUpload" class="card hidden">
+    <h2>② 上传照片</h2>
+    <div class="drop" id="drop">
+      把照片 / 文件夹拖到这里,或 <b>点击选择</b><br>
+      <span class="small">支持多选、整文件夹(含子目录);JPEG 会读取 EXIF,其他格式按内容聚类。</span>
+      <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+      <input type="file" id="dirInput" webkitdirectory directory multiple class="hidden">
+    </div>
+    <div class="row" style="margin-top:10px;align-items:center">
+      <button class="btn" id="btnAddFiles">添加文件</button>
+      <button class="btn" id="btnAddDir">添加整个文件夹</button>
+      <div class="spacer" style="flex:1"></div>
+      <button class="btn primary" id="btnAnalyze" disabled>开始智能分析</button>
+    </div>
+    <div id="uploadList"></div>
+  </section>
+
+  <!-- 3. 分析进度 -->
+  <section id="viewProgress" class="card hidden">
+    <h2>③ 智能分析中…</h2>
+    <div class="progress"><i id="progBar"></i></div>
+    <div class="small" id="progText">准备中…</div>
+  </section>
+
+  <!-- 4. 结果 -->
+  <section id="viewResult" class="card hidden">
+    <h2>④ 筛选结果</h2>
+    <div class="stat">
+      <div class="box"><div class="n" id="stAll">0</div><div class="l">全部照片</div></div>
+      <div class="box"><div class="n" style="color:var(--green)" id="stBest">0</div><div class="l">精品图</div></div>
+      <div class="box"><div class="n" style="color:var(--red)" id="stWaste">0</div><div class="l">废片(待确认)</div></div>
+      <div class="box"><div class="n" style="color:#6b7280" id="stGroup">0</div><div class="l">自动分组</div></div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-tab="all">全部<span class="cnt" id="cAll">0</span></div>
+      <div class="tab" data-tab="group">按分组<span class="cnt" id="cGroup">0</span></div>
+      <div class="tab" data-tab="best">精品图<span class="cnt" id="cBest">0</span></div>
+      <div class="tab" data-tab="waste">废片复核<span class="cnt" id="cWaste">0</span></div>
+    </div>
+    <div id="tabAll"></div>
+    <div id="tabGroup" class="hidden"></div>
+    <div id="tabBest" class="hidden"></div>
+    <div id="tabWaste" class="hidden"></div>
+    <hr>
+    <div class="row" style="align-items:center">
+      <button class="btn primary" id="btnExport">导出结果(全部 / 精品 / 废片)</button>
+      <button class="btn" id="btnReanalyze">重新分析</button>
+      <div class="spacer" style="flex:1"></div>
+      <span class="small">导出仅复制原始文件字节,EXIF 与画质均不被修改。</span>
+    </div>
+  </section>
+
+</div>
+
+<!-- 设置弹窗 -->
+<div id="modalSettings" class="hidden" style="position:fixed;inset:0;background:rgba(16,24,40,.45);z-index:50;display:flex;align-items:center;justify-content:center">
+  <div class="card" style="width:min(520px,92vw)">
+    <h2>分析设置</h2>
+    <div class="settings-line">
+      <label>模糊敏感度</label>
+      <input type="range" id="setSens" min="0" max="100" value="50" style="flex:1">
+      <span id="setSensVal" class="small">中</span>
+    </div>
+    <div class="small">越高越严格,会把更多"疑似不清晰"判为废片候选;越低越宽松。</div>
+    <div class="settings-line" style="margin-top:14px">
+      <label>每组精品图上限</label>
+      <select id="setMaxBest"><option>1</option><option selected>2</option><option>3</option></select>
+    </div>
+    <div class="settings-line">
+      <label>主体虚焦判定</label>
+      <select id="setDefocus"><option value="1" selected>开启</option><option value="0">关闭</option></select>
+    </div>
+    <hr>
+    <h3>照片存储位置</h3>
+    <div class="row" style="gap:8px;align-items:center">
+      <input type="text" id="setStorage" placeholder="未选择" readonly style="flex:1">
+      <button class="btn" id="setPick">选择文件夹</button>
+    </div>
+    <div style="margin-top:14px;text-align:right">
+      <button class="btn primary" id="setClose">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 说明弹窗 -->
+<div id="modalHelp" class="hidden" style="position:fixed;inset:0;background:rgba(16,24,40,.45);z-index:50;display:flex;align-items:center;justify-content:center">
+  <div class="card" style="width:min(620px,94vw);max-height:86vh;overflow:auto">
+    <h2>使用说明</h2>
+    <ol style="line-height:1.8">
+      <li><b>新建项目</b>:输入产品名称,可设置照片存储位置(直接写入分类结果),并设置精品图命名模板。</li>
+      <li><b>上传照片</b>:拖拽或点击添加,支持整文件夹。</li>
+      <li><b>智能分析</b>:自动读取 EXIF(机型/焦距/光圈/ISO/时间/GPS),计算清晰度与"主体虚焦",生成感知哈希。</li>
+      <li><b>自动归类</b>:按"机型+焦距相近+时间相近+视觉相似"聚类成组,每组挑 1–3 张综合最优为<b>精品图</b>。</li>
+      <li><b>废片复核</b>:明显糊片/虚焦进"废片"候选,在此逐项勾选确认(取消勾选可保留)。</li>
+      <li><b>导出</b>:生成 全部 / 精品图 / 废片 三类,复制原始字节(EXIF 与画质不变)。</li>
+    </ol>
+    <div class="note">所有计算均在本地浏览器完成,照片不会上传到任何服务器。EXIF 通过复制原始文件保留,分类过程不修改任何原图。</div>
+    <div style="text-align:right;margin-top:12px"><button class="btn primary" id="helpClose">明白了</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================ 工具 ============================ */
+const $ = s=>document.querySelector(s);
+const $$ = s=>Array.from(document.querySelectorAll(s));
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
+function sanitize(s){return (s||'').replace(/[\\/:*?"<>|]/g,'_').replace(/\s+/g,' ').trim();}
+function extOf(name){const m=/\.([a-z0-9]+)$/i.exec(name||'');return m?m[1].toLowerCase():'';}
+
+/* ============================ 状态 ============================ */
+const state = {
+  project:{name:'',storageHandle:null,storagePath:''},
+  photos:[], groups:[],
+  settings:{sens:50,maxBest:2,defocus:true,template:'{product}_best_{idx}'}
+};
+
+/* ============================ EXIF 解析(纯 JS,无依赖) ============================ */
+const EXIF_TAGS = {
+  0x010F:'Make',0x0110:'Model',0x0112:'Orientation',0x0132:'DateTime',
+  0x8769:'ExifIFD',0x8825:'GPS',0x829A:'ExposureTime',0x829D:'FNumber',
+  0x8827:'ISO',0x9003:'DateTimeOriginal',0x920A:'FocalLength',0xA405:'Focal35',
+  0xA002:'PixelX',0xA003:'PixelY'
+};
+const TYPE_SIZE = {1:1,2:1,3:2,4:4,5:8,6:1,7:1,8:2,9:4,10:8,11:4,12:8};
+
+async function readExif(file){
+  try{
+    const head = await file.slice(0, 200*1024).arrayBuffer();
+    const v = new DataView(head);
+    if(v.getUint16(0)!==0xFFD8) return null;            // 非 JPEG
+    let off=2, exifStart=-1;
+    while(off < v.byteLength-4){
+      const m=v.getUint16(off);
+      if((m&0xFF00)!==0xFF00) break;
+      if(m===0xFFDA) break;
+      if(m===0xFFE1){
+        const len=v.getUint16(off+2);
+        if(String.fromCharCode(v.getUint8(off+4),v.getUint8(off+5),v.getUint8(off+6),v.getUint8(off+7))==='Exif'){
+          exifStart=off+10; break;
+        }
+        off+=2+len;
+      }else{
+        off+=2+v.getUint16(off+2);
+      }
+    }
+    if(exifStart<0) return null;
+    const little = v.getUint16(exifStart)===0x4949;
+    const u16=o=>v.getUint16(o,little), u32=o=>v.getUint32(o,little), u8=o=>v.getUint8(o);
+    if(u16(exifStart+2)!==0x002A) return null;
+    const base=exifStart;
+    const ifd0=u32(exifStart+4);
+
+    function readIFD(at){
+      const map={};
+      if(at+2>v.byteLength) return map;
+      const cnt=u16(base+at);
+      for(let i=0;i<cnt;i++){
+        const e=base+at+2+i*12;
+        if(e+12>v.byteLength) break;
+        const tag=u16(e), type=u16(e+2), count=u32(e+4);
+        const ts=TYPE_SIZE[type]||1; const byteLen=ts*count;
+        let valOff = byteLen<=4 ? e+8 : base+u32(e+8);
+        if(valOff+byteLen>v.byteLength) continue;
+        let val;
+        if(type===2||type===7){ // ASCII / undefined
+          let s=''; for(let k=0;k<count;k++){const c=u8(valOff+k); if(c===0)break; s+=String.fromCharCode(c);}
+          val=s.trim();
+        }else if(type===5||type===10){ // RATIONAL
+          if(count===1){const n=u32(valOff),d=u32(valOff+4); val=d?n/d:0;}
+          else{const arr=[];for(let k=0;k<count;k++){const n=u32(valOff+k*8),d=u32(valOff+k*8+4);arr.push(d?n/d:0);} val=arr;}
+        }else if(type===3){ val=count===1?u16(valOff):Array.from({length:count},(_,k)=>u16(valOff+k*2)); }
+        else if(type===4){ val=count===1?u32(valOff):Array.from({length:count},(_,k)=>u32(valOff+k*4)); }
+        else if(type===1||type===6){ val=count===1?u8(valOff):Array.from({length:count},(_,k)=>u8(valOff+k)); }
+        else { val=count===1?u32(valOff):null; }
+        map[tag]=val;
+      }
+      return map;
+    }
+
+    const d0=readIFD(ifd0);
+    const out={};
+    for(const t in d0){ if(EXIF_TAGS[t]) out[EXIF_TAGS[t]]=d0[t]; }
+    out.camera=[out.Make,out.Model].filter(Boolean).join(' ').trim();
+
+    if(d0[0x8769]){
+      const dE=readIFD(d0[0x8769]);
+      for(const t in dE){ if(EXIF_TAGS[t]) out[EXIF_TAGS[t]]=dE[t]; }
+    }
+    if(d0[0x8825]){
+      const g=readIFD(d0[0x8825]);
+      const deg=g[2], ref=g[1], lon=g[4], lonRef=g[3];
+      if(Array.isArray(deg)&&deg.length>=3){
+        const dms=deg[0]+deg[1]/60+deg[2]/3600;
+        const sign=(ref==='S'||ref==='s')?-1:1;
+        out.GPSLat=sign*dms;
+      }
+      if(Array.isArray(lon)&&lon.length>=3){
+        const dms=lon[0]+lon[1]/60+lon[2]/3600;
+        const sign=(lonRef==='W'||lonRef==='w')?-1:1;
+        out.GPSLon=sign*dms;
+      }
+    }
+    // 时间
+    const dt = out.DateTimeOriginal || out.DateTime;
+    if(dt && dt.length>=14){
+      const y=+dt.slice(0,4),mo=+dt.slice(5,7),da=+dt.slice(8,10),h=+dt.slice(11,13),mi=+dt.slice(14,16),se=+dt.slice(17,19)||0;
+      if(!isNaN(y)) out.time=new Date(y,mo-1,da,h,mi,se).getTime();
+    }
+    if(typeof out.FocalLength==='number') out.focal=+out.FocalLength.toFixed(1);
+    else if(typeof out.Focal35==='number') out.focal=+out.Focal35.toFixed(1);
+    if(typeof out.FNumber==='number') out.fnum=+out.FNumber.toFixed(1);
+    if(typeof out.ISO==='number') out.iso=out.ISO;
+    return out;
+  }catch(e){ return null; }
+}
+
+/* ============================ 图像分析:模糊 / 虚焦 / 哈希 ============================ */
+function loadBitmap(file){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{res(img);URL.revokeObjectURL(url);};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('decode'));};
+    img.src=url;
+  });
+}
+function fit(w,h,max){const s=Math.min(1,max/Math.max(w,h));return [Math.max(8,Math.round(w*s)),Math.max(8,Math.round(h*s))];}
+
+async function analyzeImage(file){
+  const r={blur:0,centerBlur:0,hash:0n,dim:null,lum:0,lumCenter:0.5,bg:'normal'};
+  try{
+    const img=await loadBitmap(file);
+    r.dim=[img.naturalWidth,img.naturalHeight];
+    const [w,h]=fit(img.naturalWidth,img.naturalHeight,400);
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+    const ctx=cv.getContext('2d',{willReadFrequently:true});
+    ctx.drawImage(img,0,0,w,h);
+    const d=ctx.getImageData(0,0,w,h).data;
+    const gray=new Float32Array(w*h);
+    let sum=0;
+    for(let i=0,p=0;i<gray.length;i++,p+=4){const g=0.299*d[p]+0.587*d[p+1]+0.114*d[p+2];gray[i]=g;sum+=g;}
+    r.lum=sum/gray.length/255;
+    // 拉普拉斯方差
+    let ls=0;
+    for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+      const i=y*w+x;
+      const L=Math.abs(4*gray[i]-gray[i-1]-gray[i+1]-gray[i-w]-gray[i+w]);
+      ls+=L*L;
+    }
+    r.blur=ls/(gray.length); // 平均平方拉普拉斯 ~ 清晰度
+    // 中心区域清晰度(主体虚焦)
+    const cx0=Math.floor(w*0.25),cx1=Math.floor(w*0.75),cy0=Math.floor(h*0.25),cy1=Math.floor(h*0.75);
+    let cs=0,cn=0;
+    for(let y=cy0;y<cy1;y++)for(let x=cx0;x<cx1;x++){
+      const i=y*w+x;
+      const L=Math.abs(4*gray[i]-gray[i-1]-gray[i+1]-gray[i-w]-gray[i+w]);
+      cs+=L*L;cn++;
+    }
+    r.centerBlur=cs/cn;
+    // 中心区域平均亮度(用于白/黑底图曝光补偿)
+    let clum=0;
+    for(let y=cy0;y<cy1;y++)for(let x=cx0;x<cx1;x++){clum+=gray[y*w+x];}
+    r.lumCenter=clum/cn/255;
+    // 直方图 & 背景色判断
+    const hBin=new Float32Array(10);
+    for(let i=0;i<gray.length;i++){const b=Math.min(9,Math.floor(gray[i]/25.6));hBin[b]++;}
+    const tot=gray.length;
+    if(hBin[9]/tot>0.55) r.bg='white';
+    else if(hBin[0]/tot>0.55) r.bg='black';
+    else r.bg='normal';
+    // 平均哈希 (8x8)
+    r.hash=avgHash(gray,w,h);
+  }catch(e){}
+  return r;
+}
+function avgHash(gray,w,h){
+  // 缩到 8x8
+  const N=8; const sm=new Float32Array(N*N);
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+    const x0=Math.floor(i*w/N),x1=Math.floor((i+1)*w/N),y0=Math.floor(j*h/N),y1=Math.floor((j+1)*h/N);
+    let s=0,c=0;
+    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){s+=gray[y*w+x];c++;}
+    sm[j*N+i]=c?s/c:0;
+  }
+  let mean=0;for(const v of sm)mean+=v;mean/=sm.length;
+  let hash=0n;
+  for(let k=0;k<64;k++){ if(sm[k]>=mean) hash|=(1n<<BigInt(k)); }
+  return hash;
+}
+function hamming(a,b){let x=a^b;let c=0n;while(x>0n){c+=(x&1n);x>>=1n;}return Number(c);}
+
+/* ============================ 聚类分组 ============================ */
+function sameExposure(ea,eb){
+  if(!ea||!eb) return false;
+  const f1=ea.fnum,f2=eb.fnum,i1=ea.iso,i2=eb.iso,t1=ea.ExposureTime,t2=eb.ExposureTime;
+  if(f1&&f2&&Math.abs(f1-f2)>0.3) return false;
+  if(i1&&i2&&i1!==i2) return false;
+  if(t1&&t2&&Math.abs(t1-t2)/t1>0.02) return false;
+  return true;
+}
+function clusterPhotos(){
+  const ps=state.photos;
+  const withTime=ps.filter(p=>p.exif&&p.exif.time).sort((a,b)=>a.exif.time-b.exif.time);
+  const noTime=ps.filter(p=>!(p.exif&&p.exif.time));
+  const groups=[];
+  function dist(a,b){
+    const ea=a.exif||{}, eb=b.exif||{};
+    const sameCam=(ea.camera||'')===(eb.camera||'');
+    const sameFocal=ea.focal&&eb.focal&&Math.abs(ea.focal-eb.focal)<=1;
+    const sameExp=sameExposure(ea,eb);
+    const dt=ea.time&&eb.time?Math.abs(ea.time-eb.time)/1000:999;
+    const ham=hamming(a.hash||0n,b.hash||0n);
+    // 连拍强判定:同机型+同焦距+同曝光+时间极近+构图极近 → 必同组
+    if(sameCam&&sameFocal&&sameExp&&dt<=4&&ham<=8) return 0.15;
+    let d=0;
+    if(!sameCam) d+=4;
+    if(!sameFocal) d+=Math.abs((ea.focal||0)-(eb.focal||0))/15;
+    if(!sameExp) d+=0.8;
+    d+= Math.min(3, dt/30);            // 时间差(秒)
+    d+= ham/6;                         // 内容(构图/角度)相似度,权重提高
+    return d;
+  }
+  const TH=5;
+  for(const p of withTime){
+    let best=null,bd=1e9;
+    for(const g of groups){
+      if(!g.anchor) continue;
+      const d=dist(p,g.anchor);
+      if(d<bd){bd=d;best=g;}
+    }
+    if(best&&bd<TH){ best.members.push(p); if(best.members.length<4) best.anchor=p; }
+    else groups.push({id:groups.length,members:[p],anchor:p});
+  }
+  // 无时间的照片:仅按视觉哈希聚类
+  for(const p of noTime){
+    let best=null,bd=1e9;
+    for(const g of groups){
+      let min=1e9; for(const m of g.members){const d=hamming(p.hash||0n,m.hash||0n)/6; if(d<min)min=d;}
+      if(min<bd){bd=min;best=g;}
+    }
+    if(best&&bd<4) best.members.push(p);
+    else groups.push({id:groups.length,members:[p],anchor:p});
+  }
+  // 标记 groupId, 生成组号
+  groups.forEach((g,i)=>{
+    g.label='G'+String(i+1).padStart(2,'0');
+    g.members.forEach(m=>m.groupId=g.label);
+  });
+  // 连拍细分:同组内按时间排序,参数+构图一致且间隔短 → 同一连拍
+  groups.forEach(g=>{
+    const ms=g.members.slice().sort((a,b)=>(a.exif?.time||0)-(b.exif?.time||0));
+    let bid=0, prev=null;
+    ms.forEach(m=>{
+      if(prev){
+        const dt=Math.abs((m.exif?.time||0)-(prev.exif?.time||0))/1000;
+        const sameFocal=m.exif?.focal&&prev.exif?.focal&&Math.abs(m.exif.focal-prev.exif.focal)<=1;
+        const sameExp=sameExposure(m.exif||{},prev.exif||{});
+        const ham=hamming(m.hash||0n,prev.hash||0n);
+        if(!(dt<=5 && sameFocal && sameExp && ham<=10)) bid++;
+      }
+      m.burstId=g.label+'B'+(bid+1);
+      prev=m;
+    });
+  });
+  state.groups=groups;
+}
+
+/* ============================ 打分 / 精品 / 废片 ============================ */
+function normalize(arr,key){
+  const vals=arr.map(p=>p[key]||0); const min=Math.min(...vals),max=Math.max(...vals);
+  return p=> max>min ? (p[key]-min)/(max-min) : 0.5;
+}
+function scoreAndSelect(){
+  const ps=state.photos;
+  if(!ps.length) return;
+  const sharp=normalize(ps,'blur');
+  const maxBest=state.settings.maxBest;
+  // 自适应废片阈值
+  const blurs=ps.map(p=>p.blur||0).sort((a,b)=>a-b);
+  const pct=q=>blurs[Math.min(blurs.length-1,Math.floor(q*blurs.length))];
+  const sens=state.settings.sens/100;            // 0..1
+  const thr=pct(0.15+0.25*sens);                 // 越敏感门槛越高
+  const defocusOn=state.settings.defocus;
+  ps.forEach(p=>{
+    p.score=0; p.waste=false; p.premium=false;
+    const sh=sharp(p);
+    // 白/黑底图以产品区域亮度(中心)而非整体亮度判曝光,避免误判过曝/欠曝
+    const expLum=(p.bg==='white'||p.bg==='black')?(p.lumCenter||p.lum||0.45):(p.lum||0.45);
+    const exposure=1-Math.min(1,Math.abs(expLum-0.45)*2);
+    const mp=((p.dim?p.dim[0]*p.dim[1]:0)/1e6);
+    const res=Math.min(1,mp/12);
+    p.score=0.6*sh+0.25*exposure+0.15*res;
+    p._sh=sh;
+    // 废片候选:明显糊 或 主体虚焦
+    let waste=false;
+    if((p.blur||0) < thr) waste=true;
+    if(defocusOn && p.centerBlur>0 && p.centerBlur < (p.blur||0)*0.6 && (p.blur||0)<pct(0.6)) waste=true;
+    // 中心产品清晰(高清晰度)则宽恕——不把白底/黑底单色背景误判为废片
+    if(waste && defocusOn && (p.centerBlur||0) > thr*2) waste=false;
+    p.wasteCandidate=waste;
+  });
+  // 每组挑精品(跨连拍感知):微小调整的相邻连拍合并后每组取最优帧
+  state.groups.forEach(g=>{
+    const members=g.members.slice().sort((a,b)=>b.score-a.score);
+    const good=members.filter(m=>!m.wasteCandidate);
+    const pool=good.length?good:members;
+    if(!pool.length) return;
+    // 建立连拍映射
+    const bm={};
+    pool.forEach(m=>{ const b=m.burstId||'x'; if(!bm[b])bm[b]={frames:[],best:m}; bm[b].frames.push(m); if(m.score>bm[b].best.score)bm[b].best=m; });
+    const bArr=Object.values(bm).sort((a,b)=>(a.best.exif?.time||0)-(b.best.exif?.time||0));
+    // 合并微小调整的相邻连拍(间隔≤30s,同曝光,焦距±2mm,哈希差≤15)
+    const merged=[]; let cur=null;
+    bArr.forEach(b=>{
+      if(cur){
+        const dt=Math.abs((b.best.exif?.time||0)-(cur.best.exif?.time||0))/1000;
+        const ham=hamming(b.best.hash||0n,cur.best.hash||0n);
+        const sameExp=sameExposure(b.best.exif||{},cur.best.exif||{});
+        const sameFocal=Math.abs((b.best.exif?.focal||0)-(cur.best.exif?.focal||0))<=2;
+        if(dt<=30 && sameExp && sameFocal && ham<=15){
+          cur.frames=cur.frames.concat(b.frames);
+          if(b.best.score>cur.best.score) cur.best=b.best;
+          return;                                  // 合并到此连拍组,不 push 新组
+        }
+      }
+      cur={frames:[...b.frames],best:b.best};
+      merged.push(cur);
+    });
+    // 每个合并后的连拍组取最优帧,再补齐到 maxBest
+    const chosen=new Set(); const picks=[];
+    merged.forEach(gp=>{ if(picks.length<maxBest){picks.push(gp.best);chosen.add(gp.best);}});
+    if(picks.length<maxBest){
+      pool.forEach(m=>{ if(picks.length<maxBest && !chosen.has(m)){picks.push(m);chosen.add(m);}});
+    }
+    picks.forEach(m=>m.premium=true);
+  });
+  ps.forEach(p=>{ p.waste=p.wasteCandidate; });
+}
+
+/* ============================ 命名 ============================ */
+function bestIndex(p){
+  const g=state.groups.find(x=>x.label===p.groupId);
+  if(!g) return 1;
+  return g.members.filter(m=>m.premium).indexOf(p)+1;
+}
+function premiumName(p,groupIdx){
+  const tpl=state.settings.template;
+  const orig=extOf(p.name)?p.name.slice(0,-extOf(p.name).length-1):p.name;
+  const name=tpl
+    .replace(/\{product\}/g, sanitize(state.project.name)||'product')
+    .replace(/\{group\}/g, p.groupId||'G00')
+    .replace(/\{idx\}/g, String((groupIdx??1)))
+    .replace(/\{orig\}/g, sanitize(orig)||'photo');
+  return sanitize(name)+(extOf(p.name)?'.'+extOf(p.name):'');
+}
+
+/* ============================ UI:项目 ============================ */
+function refreshTemplatePreview(){
+  const tpl=$('#inpTemplate').value;
+  $('#tplPreview').textContent='预览示例: '+tpl
+    .replace(/\{product\}/g,(state.project.name||'产品名'))
+    .replace(/\{group\}/g,'G01').replace(/\{idx\}/g,'1').replace(/\{orig\}/g,'DSC0001');
+  state.settings.template=tpl;
+}
+$('#inpProjectName').addEventListener('input',e=>{
+  state.project.name=e.target.value.trim();
+  $('#projTag').textContent=state.project.name||'未命名项目';
+  $('#projTag').classList.toggle('hidden',!state.project.name);
+  $('#btnStart').disabled=!state.project.name;
+  refreshTemplatePreview();
+});
+$('#inpTemplate').addEventListener('input',refreshTemplatePreview);
+
+async function pickStorage(){
+  // Tauri 模式:使用原生对话框
+  if(window.__TAURI_ACTIVE && window.__TAURI_BRIDGE){
+    try{
+      const dir=await window.__TAURI_BRIDGE.dialog.open({directory:true,multiple:false,title:'选择照片存储位置'});
+      if(dir){
+        state.project.storageHandle=dir;
+        state.project.storagePath=dir.split(/[/\\]/).pop()||'存储目录';
+        $('#inpStorage').value=state.project.storagePath; $('#setStorage').value=state.project.storagePath;
+        toast('已选择存储位置:'+state.project.storagePath);
+        return true;
+      }
+    }catch(e){ return false; }
+    return false;
+  }
+  // 浏览器模式:使用 File System Access API
+  if(!window.showDirectoryPicker){ toast('当前浏览器不支持直接写文件夹,将改用 ZIP 导出'); return false; }
+  try{
+    const h=await window.showDirectoryPicker();
+    state.project.storageHandle=h;
+    state.project.storagePath=h.name;
+    $('#inpStorage').value=h.name; $('#setStorage').value=h.name;
+    toast('已选择存储位置:'+h.name);
+    return true;
+  }catch(e){ return false; }
+}
+$('#btnPickStorage').addEventListener('click',pickStorage);
+$('#setPick').addEventListener('click',pickStorage);
+
+$('#btnStart').addEventListener('click',()=>{
+  if(!state.project.name){toast('请先输入产品名称');return;}
+  $('#viewProject').classList.add('hidden');
+  $('#viewUpload').classList.remove('hidden');
+});
+
+/* ============================ UI:上传 ============================ */
+const fileInput=$('#fileInput'), dirInput=$('#dirInput'), drop=$('#drop');
+function addFiles(files){
+  let added=0;
+  for(const f of files){
+    if(!f.type.startsWith('image/') && !/\.(jpe?g|png|webp|gif|bmp|tiff?|heic)$/i.test(f.name)) continue;
+    const sig=f.name+'|'+f.size;
+    if(state.photos.some(p=>p.sig===sig)) continue;
+    state.photos.push({id:state.photos.length,sig,name:f.name,file:f,exif:null,waste:false,premium:false,hash:0n});
+    added++;
+  }
+  renderUpload();
+  $('#btnAnalyze').disabled=state.photos.length===0;
+  if(added) toast('已添加 '+added+' 张');
+}
+function renderUpload(){
+  const el=$('#uploadList');
+  if(!state.photos.length){el.innerHTML='<div class="empty">还没有照片</div>';return;}
+  el.innerHTML='<div class="small" style="margin:8px 0">共 '+state.photos.length+' 张,点击"开始智能分析"。</div>';
+}
+$('#btnAddFiles').addEventListener('click',()=>fileInput.click());
+$('#btnAddDir').addEventListener('click',()=>dirInput.click());
+fileInput.addEventListener('change',e=>{addFiles(e.target.files);fileInput.value='';});
+dirInput.addEventListener('change',e=>{addFiles(e.target.files);dirInput.value='';});
+drop.addEventListener('click',()=>fileInput.click());
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('hover');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('hover'));
+drop.addEventListener('drop',async e=>{
+  e.preventDefault();drop.classList.remove('hover');
+  const dt=e.dataTransfer;
+  if(dt.items&&dt.items.length&&dt.items[0].webkitGetAsEntry){
+    const entries=[];
+    for(const it of dt.items){const en=it.webkitGetAsEntry&&it.webkitGetAsEntry();if(en)entries.push(en);}
+    if(entries.length){ const files=await traverse(entries); addFiles(files); return; }
+  }
+  addFiles(dt.files);
+});
+async function traverse(entries){
+  const out=[];
+  for(const en of entries){
+    if(en.isFile){ await new Promise(r=>en.file(f=>{out.push(f);r();})); }
+    else if(en.isDirectory){
+      const reader=en.createReader();
+      const readBatch=()=>new Promise(res=>reader.readEntries(async es=>{
+        if(!es.length)return res();
+        const sub=await traverse(es); out.push(...sub); readBatch().then(res);
+      }));
+      await readBatch();
+    }
+  }
+  return out;
+}
+
+/* ============================ UI:分析 ============================ */
+$('#btnAnalyze').addEventListener('click',async ()=>{
+  if(!state.photos.length)return;
+  $('#viewUpload').classList.add('hidden');
+  $('#viewProgress').classList.remove('hidden');
+  const bar=$('#progBar'),txt=$('#progText');
+  const n=state.photos.length;
+  for(let i=0;i<n;i++){
+    const p=state.photos[i];
+    txt.textContent='分析 '+p.name+' ('+(i+1)+'/'+n+')';
+    bar.style.width=((i+1)/n*100)+'%';
+    p.exif=await readExif(p.file);
+    const a=await analyzeImage(p.file);
+    p.blur=a.blur;p.centerBlur=a.centerBlur;p.hash=a.hash;p.dim=a.dim;p.lum=a.lum;
+    if(i%4===0) await new Promise(r=>setTimeout(r,0));
+  }
+  clusterPhotos();
+  scoreAndSelect();
+  $('#viewProgress').classList.add('hidden');
+  $('#viewResult').classList.remove('hidden');
+  renderResult();
+  $('#btnExportTop').disabled=false;
+});
+
+/* ============================ UI:结果渲染 ============================ */
+function tile(p,opts={}){
+  const t=document.createElement('div');t.className='tile';
+  const u=URL.createObjectURL(p.file);
+  const img=document.createElement('img');img.src=u;img.loading='lazy';t.appendChild(img);
+  let badge='';
+  if(p.premium) badge='<span class="badge best">精品</span>';
+  else if(p.waste) badge='<span class="badge waste">废片</span>';
+  else if(opts.group) badge='<span class="badge group">'+p.groupId+'</span>';
+  t.insertAdjacentHTML('beforeend',badge);
+  const meta=document.createElement('div');meta.className='meta';
+  const e=p.exif||{};
+  const info=[e.focal?e.focal+'mm':'',e.fnum?'f/'+e.fnum:'',e.iso?'ISO'+e.iso:''].filter(Boolean).join(' · ');
+  meta.textContent=p.name+(info?'  ('+info+')':'');
+  t.appendChild(meta);
+  if(opts.checkbox){
+    const c=document.createElement('label');c.className='chk';
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=!p.waste;
+    cb.title='勾选=保留,取消=确认为废片';
+    cb.addEventListener('change',()=>{p.waste=!cb.checked;updateStats();renderResult();});
+    c.appendChild(cb);t.appendChild(c);
+  }
+  return t;
+}
+function updateStats(){
+  const ps=state.photos;
+  const best=ps.filter(p=>p.premium).length;
+  const waste=ps.filter(p=>p.waste).length;
+  $('#stAll').textContent=ps.length;
+  $('#stBest').textContent=best;
+  $('#stWaste').textContent=waste;
+  $('#stGroup').textContent=state.groups.length;
+  $('#cAll').textContent=ps.length;
+  $('#cGroup').textContent=state.groups.length;
+  $('#cBest').textContent=best;
+  $('#cWaste').textContent=waste;
+}
+function renderResult(){
+  updateStats();
+  const ps=state.photos;
+  // 全部
+  const all=$('#tabAll');all.innerHTML='';
+  const g=document.createElement('div');g.className='grid';
+  ps.forEach(p=>g.appendChild(tile(p,{})));
+  all.appendChild(g);
+  // 分组
+  const grp=$('#tabGroup');grp.innerHTML='';
+  state.groups.forEach(group=>{
+    const h=document.createElement('h3');
+    const bestN=group.members.filter(m=>m.premium).length;
+    const burstN=new Set(group.members.map(m=>m.burstId)).size;
+    h.innerHTML='分组 '+group.label+' <span class="pill">'+(group.members[0]?.exif?.camera||'未知机型')+'</span> <span class="pill">'+group.members.length+'张</span> <span class="pill a">连拍 '+burstN+'</span> <span class="pill g">精品 '+bestN+'</span>';
+    grp.appendChild(h);
+    const gg=document.createElement('div');gg.className='grid';
+    group.members.forEach(p=>gg.appendChild(tile(p,{group:true})));
+    grp.appendChild(gg);
+  });
+  // 精品
+  const best=$('#tabBest');best.innerHTML='';
+  if(!ps.some(p=>p.premium)) best.innerHTML='<div class="empty">暂无精品图</div>';
+  else{
+    const bg=document.createElement('div');bg.className='grid';
+    ps.filter(p=>p.premium).forEach(p=>{
+      const idx=bestIndex(p);
+      const tt=tile(p,{});
+      tt.insertAdjacentHTML('beforeend','<div class="meta" style="color:var(--green);font-weight:600">导出名: '+premiumName(p,idx)+'</div>');
+      bg.appendChild(tt);
+    });
+    best.appendChild(bg);
+  }
+  // 废片复核
+  const waste=$('#tabWaste');waste.innerHTML='';
+  const wps=ps.filter(p=>p.wasteCandidate||p.waste);
+  if(!wps.length) waste.innerHTML='<div class="empty">未检测到明显废片</div>';
+  else{
+    waste.insertAdjacentHTML('beforeend','<div class="note">以下为疑似糊片/虚焦。取消勾选可保留为正常照片,勾选则确认为废片。</div>');
+    const wg=document.createElement('div');wg.className='grid';
+    wps.forEach(p=>wg.appendChild(tile(p,{checkbox:true})));
+    waste.appendChild(wg);
+  }
+}
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{
+  $$('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const tab=t.dataset.tab;
+  ['all','group','best','waste'].forEach(k=>$('#tab'+k[0].toUpperCase()+k.slice(1)).classList.add('hidden'));
+  $('#tab'+tab[0].toUpperCase()+tab.slice(1)).classList.remove('hidden');
+}));
+
+$('#btnReanalyze').addEventListener('click',()=>{
+  scoreAndSelect();renderResult();toast('已按当前设置重新分析');
+});
+
+/* ============================ 设置 / 帮助 ============================ */
+$('#btnSettings').addEventListener('click',()=>{
+  $('#setSens').value=state.settings.sens;
+  $('#setSensVal').textContent=sensLabel(state.settings.sens);
+  $('#setMaxBest').value=state.settings.maxBest;
+  $('#setDefocus').value=state.settings.defocus?'1':'0';
+  $('#setStorage').value=state.project.storagePath||'';
+  $('#modalSettings').classList.remove('hidden');
+});
+$('#setSens').addEventListener('input',e=>$('#setSensVal').textContent=sensLabel(+e.target.value));
+function sensLabel(v){return v<33?'宽松':v<67?'中':'严格';}
+$('#setClose').addEventListener('click',()=>{
+  state.settings.sens=+$('#setSens').value;
+  state.settings.maxBest=+$('#setMaxBest').value;
+  state.settings.defocus=$('#setDefocus').value==='1';
+  $('#modalSettings').classList.add('hidden');
+  if(state.photos.length){scoreAndSelect();renderResult();toast('设置已保存并重新分析');}
+});
+$('#btnHelp').addEventListener('click',()=>$('#modalHelp').classList.remove('hidden'));
+$('#helpClose').addEventListener('click',()=>$('#modalHelp').classList.add('hidden'));
+$('#modalHelp').addEventListener('click',e=>{if(e.target.id==='modalHelp')$('#modalHelp').classList.add('hidden');});
+$('#modalSettings').addEventListener('click',e=>{if(e.target.id==='modalSettings')$('#modalSettings').classList.add('hidden');});
+
+/* ============================ 导出 ============================ */
+function buildEntries(){
+  const ps=state.photos;
+  const root=sanitize(state.project.name)||'photos';
+  const entries=[]; // {path, file}
+  // 全部
+  ps.forEach(p=>entries.push({path:`${root}/全部照片/${sanitize(p.name)}`,file:p.file}));
+  // 精品(重命名)
+  ps.filter(p=>p.premium).forEach(p=>{
+    const idx=bestIndex(p);
+    entries.push({path:`${root}/精品图/${premiumName(p,idx)}`,file:p.file});
+  });
+  // 废片
+  ps.filter(p=>p.waste).forEach(p=>entries.push({path:`${root}/废片/${sanitize(p.name)}`,file:p.file}));
+  return entries;
+}
+async function writeEntriesFS(entries){
+  // Tauri 模式:使用原生文件系统 API
+  if(window.__TAURI_ACTIVE && window.__TAURI_BRIDGE){
+    const root=state.project.storageHandle;
+    const projName=sanitize(state.project.name)||'photos';
+    const fs=window.__TAURI_BRIDGE.fs;
+    for(const e of entries){
+      const fp=root+'/'+projName+'/'+e.path;
+      const dir=fp.substring(0,fp.lastIndexOf('/'));
+      await fs.mkdir(dir,{recursive:true});
+      const bytes=new Uint8Array(await e.file.arrayBuffer());
+      await fs.writeFile(fp,bytes);
+    }
+    return;
+  }
+  // 浏览器模式:使用 File System Access API
+  const root=state.project.storageHandle;
+  const projName=sanitize(state.project.name)||'photos';
+  const projDir=await root.getDirectoryHandle(projName,{create:true});
+  const made={};
+  async function dir(name){ if(made[name])return made[name]; made[name]=await projDir.getDirectoryHandle(name,{create:true}); return made[name]; }
+  for(const e of entries){
+    const parts=e.path.split('/'); const fname=parts.pop(); const d=await dir(parts.pop());
+    const fh=await d.getFileHandle(fname,{create:true});
+    const w=await fh.createWritable(); await w.write(e.file); await w.close();
+  }
+}
+$('#btnExport').addEventListener('click',exportResult);
+$('#btnExportTop').addEventListener('click',exportResult);
+async function exportResult(){
+  const entries=buildEntries();
+  if(!entries.length){toast('没有可导出的照片');return;}
+  if(state.project.storageHandle){
+    try{ await writeEntriesFS(entries); toast('已写入文件夹: '+state.project.storagePath+' / '+sanitize(state.project.name)); return; }
+    catch(e){ toast('直接写入失败,改用 ZIP 导出'); }
+  }
+  // ZIP 兜底
+  const zip=await buildZip(entries);
+  const url=URL.createObjectURL(zip);
+  const a=document.createElement('a');a.href=url;a.download=(sanitize(state.project.name)||'photos')+'_分类结果.zip';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+  toast('已导出 ZIP(含 全部/精品/废片,EXIF 保留)');
+}
+
+/* ============================ 极简 ZIP 写入器(仅存储,保留字节) ============================ */
+const CRC_TABLE=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(bytes){let c=0xFFFFFFFF;for(let i=0;i<bytes.length;i++)c=CRC_TABLE[(c^bytes[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+async function buildZip(entries){
+  const enc=new TextEncoder();
+  const parts=[];let offset=0;const central=[];
+  for(const e of entries){
+    const data=new Uint8Array(await e.file.arrayBuffer());
+    const nameBytes=enc.encode(e.path);
+    const crc=crc32(data);
+    const utf8flag=(/[^\x00-\x7f]/).test(e.path)?0x0800:0;
+    const local=new Uint8Array(30+nameBytes.length);
+    const dv=new DataView(local.buffer);
+    dv.setUint32(0,0x04034b50,true);dv.setUint16(4,20,true);dv.setUint16(6,utf8flag,true);
+    dv.setUint16(8,0,true);dv.setUint16(10,0,true);dv.setUint16(12,0,true);
+    dv.setUint32(14,crc,true);dv.setUint32(18,data.length,true);dv.setUint32(22,data.length,true);
+    dv.setUint16(26,nameBytes.length,true);dv.setUint16(28,0,true);
+    local.set(nameBytes,30);
+    const full=new Uint8Array(local.length+data.length);full.set(local,0);full.set(data,local.length);
+    parts.push(full);
+    central.push({nameBytes,crc,size:data.length,offset});
+    offset+=full.length;
+  }
+  let cdSize=0;const cd=[];
+  for(const c of central){
+    const utf8flag2=(/[^\x00-\x7f]/).test(new TextDecoder().decode(c.nameBytes))?0x0800:0;
+    const rec=new Uint8Array(46+c.nameBytes.length);
+    const dv=new DataView(rec.buffer);
+    dv.setUint32(0,0x02014b50,true);dv.setUint16(4,20,true);dv.setUint16(6,20,true);
+    dv.setUint16(8,utf8flag2,true);dv.setUint16(10,0,true);dv.setUint16(12,0,true);dv.setUint16(14,0,true);
+    dv.setUint32(16,c.crc,true);dv.setUint32(20,c.size,true);dv.setUint32(24,c.size,true);
+    dv.setUint16(28,c.nameBytes.length,true);dv.setUint16(30,0,true);dv.setUint16(32,0,true);
+    dv.setUint16(34,0,true);dv.setUint16(36,0,true);dv.setUint32(38,0,true);dv.setUint32(42,c.offset,true);
+    rec.set(c.nameBytes,46);cd.push(rec);cdSize+=rec.length;
+  }
+  const cdOffset=offset;
+  const eo=new Uint8Array(22);const ed=new DataView(eo.buffer);
+  ed.setUint32(0,0x06054b50,true);ed.setUint16(8,central.length,true);ed.setUint16(10,central.length,true);
+  ed.setUint32(12,cdSize,true);ed.setUint32(16,cdOffset,true);
+  return new Blob([...parts,...cd,eo],{type:'application/zip'});
+}
+
+/* ============================ 初始化 ============================ */
+refreshTemplatePreview();
+</script>
+</body>
+</html>
